@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penca Mundial 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; color: #222; }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.3rem; }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 16px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    nav a:hover { opacity: 1; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    /* Selector de jugador */
+    .player-bar {
+      background: white;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .player-bar label { font-weight: bold; font-size: 0.9rem; }
+    .player-bar select, .player-bar input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .player-bar button {
+      padding: 6px 14px;
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .player-bar button:hover { background: #2d2d5e; }
+    #current-player-info {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    #current-player-info strong { color: #1a1a2e; }
+
+    /* Filtros de ronda */
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .filter-btn.active {
+      background: #1a1a2e;
+      color: white;
+      border-color: #1a1a2e;
+    }
+
+    /* Sección de grupo */
+    .group-section { margin-bottom: 28px; }
+    .group-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      background: #e0e0f0;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .group-teams {
+      font-size: 0.78rem;
+      font-weight: normal;
+      color: #555;
+    }
+
+    /* Tarjeta de partido */
+    .match-card {
+      background: white;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+    }
+    .match-card.locked { opacity: 0.6; }
+    .match-card.has-prediction { border-left: 3px solid #4caf50; }
+    .match-card.has-prediction.locked { border-left: 3px solid #ff9800; }
+
+    .team { font-size: 0.95rem; font-weight: 500; }
+    .team.home { text-align: right; }
+    .team.away { text-align: left; }
+
+    .match-center { text-align: center; }
+    .match-date { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+    .match-ground { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+
+    /* Inputs de resultado */
+    .score-inputs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 6px 0;
+    }
+    .score-inputs input {
+      width: 38px;
+      height: 38px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 0;
+    }
+    .score-inputs input:focus {
+      outline: none;
+      border-color: #1a1a2e;
+    }
+    .score-inputs input:disabled {
+      background: #f5f5f5;
+      color: #999;
+    }
+    .score-sep { font-size: 1.1rem; color: #888; font-weight: bold; }
+
+    /* Resultado oficial */
+    .official-score {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #1a1a2e;
+    }
+
+    /* Puntos obtenidos */
+    .points-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .points-3 { background: #e8f5e9; color: #2e7d32; }
+    .points-1 { background: #fff3e0; color: #e65100; }
+    .points-0 { background: #ffebee; color: #c62828; }
+
+    /* Estado del partido */
+    .match-status {
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 2px;
+    }
+    .match-status.locked { color: #e65100; }
+
+    /* Mensaje de no jugador */
+    .no-player-msg {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+      font-size: 1rem;
+    }
+
+    /* Guardar feedback */
+    .save-feedback {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4caf50;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Resumen de puntos */
+    .summary-bar {
+      background: white;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 24px;
+      font-size: 0.88rem;
+      color: #555;
+    }
+    .summary-bar span strong { color: #1a1a2e; font-size: 1rem; }
+
+    @media (max-width: 600px) {
+      .match-card { grid-template-columns: 1fr; }
+      .team.home { text-align: left; }
+      .filters { gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ Penca Mundial 2026</h1>
+  <nav>
+    <a href="index.html">Pronósticos</a>
+    <a href="ranking.html">Ranking</a>
+    <a href="fixture.html">Fixture</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Selector de jugador -->
+  <div class="player-bar">
+    <label>Jugador:</label>
+    <select id="player-select">
+      <option value="">-- Seleccioná --</option>
+    </select>
+    <span>o</span>
+    <input type="text" id="new-player-name" placeholder="Nombre nuevo..." maxlength="30">
+    <button onclick="addPlayer()">Agregar</button>
+    <div id="current-player-info"></div>
+  </div>
+
+  <!-- Resumen puntos -->
+  <div class="summary-bar" id="summary-bar" style="display:none">
+    <span>Pronósticos: <strong id="sum-filled">0</strong> / <strong id="sum-total">0</strong></span>
+    <span>Puntos: <strong id="sum-points">0</strong></span>
+    <span>Exactos: <strong id="sum-exact">0</strong></span>
+    <span>Ganador: <strong id="sum-winner">0</strong></span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters" id="filters"></div>
+
+  <!-- Partidos -->
+  <div id="matches-container">
+    <div class="no-player-msg">Seleccioná o agregá un jugador para cargar tus pronósticos.</div>
+  </div>
+
+</div>
+
+<div class="save-feedback" id="save-feedback">✓ Guardado</div>
+
+<script>
+// ─── Estado global ───────────────────────────────────────────────────────────
+let fixture = null;
+let currentPlayer = null;
+let currentFilter = 'Fase de Grupos';
+
+// ─── Inicialización ───────────────────────────────────────────────────────────
+async function init() {
+  await loadFixture();
+  loadPlayers();
+  buildFilters();
+}
+
+async function loadFixture() {
+  const resp = await fetch('data/worldcup.json');
+  fixture = await resp.json();
+}
+
+// ─── Jugadores ────────────────────────────────────────────────────────────────
+function getPlayers() {
+  return JSON.parse(localStorage.getItem('penca_players') || '[]');
+}
+
+function savePlayers(players) {
+  localStorage.setItem('penca_players', JSON.stringify(players));
+}
+
+function loadPlayers() {
+  const players = getPlayers();
+  const sel = document.getElementById('player-select');
+  sel.innerHTML = '<option value="">-- Seleccioná --</option>';
+  players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => selectPlayer(sel.value);
+
+  // Restaurar último jugador activo
+  const last = localStorage.getItem('penca_current_player');
+  if (last && players.includes(last)) {
+    sel.value = last;
+    selectPlayer(last);
+  }
+}
+
+function addPlayer() {
+  const input = document.getElementById('new-player-name');
+  const name = input.value.trim();
+  if (!name) return;
+  const players = getPlayers();
+  if (players.includes(name)) {
+    alert('Ya existe un jugador con ese nombre.');
+    return;
+  }
+  players.push(name);
+  savePlayers(players);
+  input.value = '';
+  loadPlayers();
+  document.getElementById('player-select').value = name;
+  selectPlayer(name);
+}
+
+function selectPlayer(name) {
+  currentPlayer = name || null;
+  localStorage.setItem('penca_current_player', name || '');
+
+  const info = document.getElementById('current-player-info');
+  if (currentPlayer) {
+    info.innerHTML = `Jugando como: <strong>${currentPlayer}</strong>`;
+    document.getElementById('summary-bar').style.display = 'flex';
+    renderMatches();
+    updateSummary();
+  } else {
+    info.innerHTML = '';
+    document.getElementById('summary-bar').style.display = 'none';
+    document.getElementById('matches-container').innerHTML =
+      '<div class="no-player-msg">Seleccioná o agregá un jugador para cargar tus pronósticos.</div>';
+  }
+}
+
+// ─── Pronósticos ──────────────────────────────────────────────────────────────
+function getPronosticos(player) {
+  return JSON.parse(localStorage.getItem(`penca_pronosticos_${player}`) || '{}');
+}
+
+function savePronostico(player, matchId, g1, g2) {
+  const data = getPronosticos(player);
+  if (g1 === '' && g2 === '') {
+    delete data[matchId];
+  } else {
+    data[matchId] = { g1: parseInt(g1), g2: parseInt(g2) };
+  }
+  localStorage.setItem(`penca_pronosticos_${player}`, JSON.stringify(data));
+  showSaveFeedback();
+  updateSummary();
+}
+
+// ─── Puntos ───────────────────────────────────────────────────────────────────
+function calcPoints(match, prono) {
+  if (!match.score || prono === undefined) return null;
+  const [r1, r2] = match.score.ft;
+  const { g1, g2 } = prono;
+
+  if (g1 === r1 && g2 === r2) return 3; // exacto o empate exacto
+  if ((g1 > g2 && r1 > r2) || (g1 < g2 && r1 < r2)) return 1; // ganador correcto
+  if (g1 === g2 && r1 === r2) return 3; // ambos acertaron empate (diferente marcador)
+  return 0;
+}
+
+// ─── Filtros ──────────────────────────────────────────────────────────────────
+function buildFilters() {
+  if (!fixture) return;
+  const rounds = [...new Set(fixture.matches.map(m => m.round))];
+  const container = document.getElementById('filters');
+  rounds.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (r === currentFilter ? ' active' : '');
+    btn.textContent = r;
+    btn.onclick = () => {
+      currentFilter = r;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMatches();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// ─── Render partidos ──────────────────────────────────────────────────────────
+function isLocked(match) {
+  if (!match.date || !match.time) return false;
+  const matchDt = new Date(`${match.date}T${match.time}:00-03:00`);
+  return new Date() >= matchDt;
+}
+
+function renderMatches() {
+  if (!fixture || !currentPlayer) return;
+  const container = document.getElementById('matches-container');
+  container.innerHTML = '';
+
+  const filtered = fixture.matches.filter(m => m.round === currentFilter);
+  const pronos = getPronosticos(currentPlayer);
+
+  if (currentFilter === 'Fase de Grupos') {
+    // Agrupar por grupo
+    const byGroup = {};
+    filtered.forEach(m => {
+      if (!byGroup[m.group]) byGroup[m.group] = [];
+      byGroup[m.group].push(m);
+    });
+
+    Object.entries(byGroup).sort().forEach(([group, matches]) => {
+      const teams = fixture.groups[group] || [];
+      const section = document.createElement('div');
+      section.className = 'group-section';
+      section.innerHTML = `
+        <div class="group-title">
+          Grupo ${group}
+          <span class="group-teams">${teams.join(' · ')}</span>
+        </div>`;
+      matches.forEach(m => section.appendChild(buildMatchCard(m, pronos[m.id])));
+      container.appendChild(section);
+    });
+  } else {
+    filtered.forEach(m => container.appendChild(buildMatchCard(m, pronos[m.id])));
+  }
+}
+
+function buildMatchCard(match, prono) {
+  const locked = isLocked(match);
+  const pts = match.score ? calcPoints(match, prono) : null;
+  const hasPredno = prono !== undefined;
+
+  const card = document.createElement('div');
+  card.className = 'match-card'
+    + (locked ? ' locked' : '')
+    + (hasPredno ? ' has-prediction' : '');
+
+  // Fecha en hora Uruguay (UTC-3)
+  let dateStr = match.date || '?';
+  let timeStr = '';
+  if (match.date && match.time) {
+    const dt = new Date(`${match.date}T${match.time}:00-03:00`);
+    dateStr = dt.toLocaleDateString('es-UY', { day: '2-digit', month: 'short', weekday: 'short' });
+    timeStr = dt.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' }) + ' (UY)';
+  }
+
+  // Centro: fecha + inputs/resultado
+  let centerHtml = `
+    <div class="match-date">${dateStr} ${timeStr}</div>`;
+
+  if (match.score) {
+    // Partido terminado: mostrar resultado oficial
+    centerHtml += `<div class="official-score">${match.score.ft[0]} - ${match.score.ft[1]}</div>`;
+    if (hasPredno) {
+      const label = pts === 3 ? '✓ 3 pts' : pts === 1 ? '~ 1 pt' : '✗ 0 pts';
+      const cls = `points-${pts}`;
+      centerHtml += `<div class="points-badge ${cls}">${label}</div>`;
+      centerHtml += `<div class="match-status">Tu pronóstico: ${prono.g1} - ${prono.g2}</div>`;
+    } else {
+      centerHtml += `<div class="match-status">Sin pronóstico</div>`;
+    }
+  } else if (locked) {
+    // Bloqueado, sin resultado aún
+    const p1 = prono ? prono.g1 : '?';
+    const p2 = prono ? prono.g2 : '?';
+    centerHtml += `<div class="official-score" style="color:#bbb">? - ?</div>`;
+    centerHtml += `<div class="match-status locked">🔒 Cerrado · ${hasPredno ? `${p1} - ${p2}` : 'Sin pronóstico'}</div>`;
+  } else {
+    // Abierto para pronosticar
+    const v1 = prono ? prono.g1 : '';
+    const v2 = prono ? prono.g2 : '';
+    centerHtml += `
+      <div class="score-inputs">
+        <input type="number" min="0" max="30" value="${v1}"
+          id="g1_${match.id}" placeholder="-"
+          onchange="onScoreChange(${match.id})">
+        <span class="score-sep">-</span>
+        <input type="number" min="0" max="30" value="${v2}"
+          id="g2_${match.id}" placeholder="-"
+          onchange="onScoreChange(${match.id})">
+      </div>`;
+    centerHtml += `<div class="match-status">${hasPredno ? '✓ Pronóstico guardado' : 'Sin pronóstico'}</div>`;
+  }
+
+  centerHtml += `<div class="match-ground">📍 ${match.ground || 'TBD'}</div>`;
+
+  card.innerHTML = `
+    <div class="team home">${match.team1}</div>
+    <div class="match-center">${centerHtml}</div>
+    <div class="team away">${match.team2}</div>`;
+
+  return card;
+}
+
+function onScoreChange(matchId) {
+  const g1 = document.getElementById(`g1_${matchId}`).value;
+  const g2 = document.getElementById(`g2_${matchId}`).value;
+  if (g1 !== '' && g2 !== '') {
+    savePronostico(currentPlayer, matchId, g1, g2);
+    // Actualizar clase de la tarjeta
+    renderMatches();
+  }
+}
+
+// ─── Resumen ──────────────────────────────────────────────────────────────────
+function updateSummary() {
+  if (!currentPlayer || !fixture) return;
+  const pronos = getPronosticos(currentPlayer);
+  const played = fixture.matches.filter(m => m.score);
+
+  let total = 0, exact = 0, winner = 0, points = 0;
+  const filled = Object.keys(pronos).length;
+
+  played.forEach(m => {
+    const p = pronos[m.id];
+    if (!p) return;
+    const pts = calcPoints(m, p);
+    if (pts === 3) { exact++; points += 3; }
+    else if (pts === 1) { winner++; points += 1; }
+  });
+
+  document.getElementById('sum-filled').textContent = filled;
+  document.getElementById('sum-total').textContent = fixture.matches.length;
+  document.getElementById('sum-points').textContent = points;
+  document.getElementById('sum-exact').textContent = exact;
+  document.getElementById('sum-winner').textContent = winner;
+}
+
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+let feedbackTimer;
+function showSaveFeedback() {
+  const el = document.getElementById('save-feedback');
+  el.style.display = 'block';
+  clearTimeout(feedbackTimer);
+  feedbackTimer = setTimeout(() => el.style.display = 'none', 1500);
+}
+
+// ─── Arrancar ─────────────────────────────────────────────────────────────────
+init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixture - Penca Mundial 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; color: #222; }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.3rem; }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 16px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    nav a:hover { opacity: 1; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .filter-btn.active {
+      background: #1a1a2e;
+      color: white;
+      border-color: #1a1a2e;
+    }
+
+    .group-section { margin-bottom: 28px; }
+    .group-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      background: #e0e0f0;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .group-teams { font-size: 0.78rem; font-weight: normal; color: #555; }
+
+    .match-card {
+      background: white;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+    }
+    .team { font-size: 0.92rem; font-weight: 500; }
+    .team.home { text-align: right; }
+
+    .match-center { text-align: center; }
+    .match-date { font-size: 0.72rem; color: #888; }
+    .score {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #1a1a2e;
+      padding: 2px 0;
+    }
+    .score.tbd { color: #ccc; }
+    .ground { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
+
+    .round-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      margin-top: 4px;
+      padding: 6px 12px;
+      background: #e0e0f0;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ Penca Mundial 2026</h1>
+  <nav>
+    <a href="index.html">Pronósticos</a>
+    <a href="ranking.html">Ranking</a>
+    <a href="fixture.html">Fixture</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="filters" id="filters"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+let fixture = null;
+let currentFilter = 'Fase de Grupos';
+
+async function init() {
+  const resp = await fetch('data/worldcup.json');
+  fixture = await resp.json();
+  buildFilters();
+  render();
+}
+
+function buildFilters() {
+  const rounds = [...new Set(fixture.matches.map(m => m.round))];
+  const container = document.getElementById('filters');
+  rounds.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (r === currentFilter ? ' active' : '');
+    btn.textContent = r;
+    btn.onclick = () => {
+      currentFilter = r;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function render() {
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const filtered = fixture.matches.filter(m => m.round === currentFilter);
+
+  if (currentFilter === 'Fase de Grupos') {
+    const byGroup = {};
+    filtered.forEach(m => {
+      if (!byGroup[m.group]) byGroup[m.group] = [];
+      byGroup[m.group].push(m);
+    });
+    Object.entries(byGroup).sort().forEach(([group, matches]) => {
+      const teams = fixture.groups[group] || [];
+      const section = document.createElement('div');
+      section.className = 'group-section';
+      section.innerHTML = `<div class="group-title">Grupo ${group}<span class="group-teams">${teams.join(' · ')}</span></div>`;
+      matches.forEach(m => section.appendChild(buildCard(m)));
+      content.appendChild(section);
+    });
+  } else {
+    const section = document.createElement('div');
+    section.className = 'group-section';
+    section.innerHTML = `<div class="round-title">${currentFilter}</div>`;
+    filtered.forEach(m => section.appendChild(buildCard(m)));
+    content.appendChild(section);
+  }
+}
+
+function buildCard(match) {
+  let dateStr = match.date || '?';
+  let timeStr = '';
+  if (match.date && match.time) {
+    const dt = new Date(`${match.date}T${match.time}:00-03:00`);
+    dateStr = dt.toLocaleDateString('es-UY', { weekday: 'short', day: '2-digit', month: 'short' });
+    timeStr = dt.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const scoreHtml = match.score
+    ? `<div class="score">${match.score.ft[0]} - ${match.score.ft[1]}</div>`
+    : `<div class="score tbd">vs</div>`;
+
+  const card = document.createElement('div');
+  card.className = 'match-card';
+  card.innerHTML = `
+    <div class="team home">${match.team1}</div>
+    <div class="match-center">
+      <div class="match-date">${dateStr} ${timeStr} (UY)</div>
+      ${scoreHtml}
+      <div class="ground">📍 ${match.ground || 'TBD'}</div>
+    </div>
+    <div class="team away">${match.team2}</div>`;
+  return card;
+}
+
+init();
+</script>
+</body>
+</html>
